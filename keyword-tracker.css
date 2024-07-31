@@ -1,0 +1,76 @@
+/* keyword-tracker.css */
+
+.green {
+    color: green;
+}
+
+.red {
+    color: red;
+}
+
+.icon {
+    position: relative;
+    display: inline-block;
+}
+
+.icon .dashicons {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.icon .dashicons:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #000;
+    color: #fff;
+    padding: 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    z-index: 1;
+}
+
+/* Styles for the suggestion list */
+#location-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    
+    max-height: 200px; /* Limit height */
+    overflow-y: auto; /* Enable scroll if too many suggestions */
+    z-index: 10;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background: #f0f0f0;
+}
+
+#loading-indicator {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 20px;
+}
+
+#chart-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border: 1px solid #ccc;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#chart-container {
+    width: 600px;
+    height: 400px;
+}
