@@ -271,6 +271,8 @@ function keyword_tracker_activation() {
         keyword varchar(255) NOT NULL,
         place_id varchar(255) NOT NULL,
         location varchar(255) NOT NULL,
+        grid_radius smallint NOT NULL,
+        grid_points smallint NOT NULL,
         created_date datetime NOT NULL,
         avg_ranking float NOT NULL,
         last_ranking_check datetime DEFAULT NULL,

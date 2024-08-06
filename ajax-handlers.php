@@ -365,6 +365,8 @@ function save_gmb_data() {
 
     $keyword = sanitize_text_field($_POST['keyword']);
     $location = sanitize_text_field($_POST['location']);
+    $grid_radius = sanitize_text_field($_POST['gridRadius']);
+    $grid_points = sanitize_text_field($_POST['gridPoints']);
     $place_id = sanitize_text_field($place_id);
     $gridRadius = floatval($_POST['gridRadius']);
     $gridPoints = intval($_POST['gridPoints']);
@@ -386,6 +388,8 @@ function save_gmb_data() {
             'keyword' => $keyword,
             'location' => $location,
             'place_id' => $place_id,
+            'grid_points' => $grid_points,
+            'grid_radius' => $grid_radius,
             'created_date' => $current_time,
             'avg_ranking' => $avg_ranking,
             'last_ranking_check' => $last_ranking_check

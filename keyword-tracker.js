@@ -1,3 +1,64 @@
+let selectedCoordinates = { lat: 35.2271, lng: -80.8431 }; // Default center (Charlotte, NC)
+
+function initMap() {
+    const gridRadius = parseFloat(jQuery('#grid-radius').val());
+    const gridPoints = parseInt(jQuery('#grid-points').val());
+    const center = selectedCoordinates; // Use the selected coordinates
+
+    const map = new google.maps.Map(document.getElementById('gmb-ranking-map'), {
+        zoom: 11,
+        center: center
+    });
+
+    const milesToDegrees = 1 / 69.0; // 1 mile in degrees
+    const gridSize = gridRadius * 2 * milesToDegrees; // Distance between centers of circles
+
+    // Calculate the start positions
+    const startLat = center.lat - (gridSize * (gridPoints / 2));
+    const startLng = center.lng - (gridSize * (gridPoints / 2));
+
+    const bounds = new google.maps.LatLngBounds();
+
+    for (let i = 0; i < gridPoints; i++) {
+        for (let j = 0; j < gridPoints; j++) {
+            const lat = startLat + (i * gridSize);
+            const lng = startLng + (j * gridSize);
+
+            const circle = new google.maps.Circle({
+                strokeColor: '#000000',
+                strokeOpacity: 1,
+                strokeWeight: 2,
+                fillColor: '#ffffff',
+                fillOpacity: 1,
+                map,
+                center: { lat, lng },
+                radius: gridRadius * 1609.34 / 3 // Radius in meters (1 mile = 1609.34 meters)
+            });
+
+            const marker = new google.maps.Marker({
+                position: { lat, lng },
+                map,
+                label: {
+                    text: '?',
+                    color: '#000000',
+                    fontSize: '10px'
+                },
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 0 // Hide the default circle
+                }
+            });
+
+            bounds.extend({ lat, lng });
+        }
+    }
+
+    // Fit the map to the bounds of the grid
+    map.fitBounds(bounds);
+}
+// Assign initMap to the window object to make it globally accessible
+window.initMap = initMap;
+
 jQuery(document).ready(function($) {
 
     let typingTimer;
@@ -56,6 +117,18 @@ jQuery(document).ready(function($) {
         const location = $(this).data('location');
         $('#location-input').val(location);
         $('#location-suggestions').hide();
+
+        if (location) {
+            geocodeLocation(location, function(geocodedLocation) {
+                if (geocodedLocation) {
+                    selectedCoordinates = geocodedLocation; // Update the selected coordinates
+                    initMap(); // Initialize the map with the new coordinates
+                } else {
+                    alert('Failed to geocode the location.');
+                }
+            });
+        }
+        
     });
 
     // Hide suggestions when clicking outside
@@ -451,8 +524,8 @@ jQuery(document).ready(function($) {
         const keyword = $('#keyword-input').val();
         const location = $('#location-input').val();
         const placeId  = keywordTrackerAjax.place_id;
-        gridRadius = parseFloat($('#grid-radius').val());
-        gridPoints = parseInt($('#grid-points').val());
+        gridRadius = $('#grid-radius').val();
+        gridPoints = $('#grid-points').val();
 
         if (!keyword || !location) {
             alert('Please enter both keyword and location.');
@@ -462,11 +535,11 @@ jQuery(document).ready(function($) {
         // Geocode the location
         geocodeLocation(location, function(geocodedLocation) {
             if (geocodedLocation) {
-                center = geocodedLocation;
+                selectedCoordinates = geocodedLocation; 
                 // Clear the map container
-                $('#gmb-ranking-map').html('');
+                // $('#gmb-ranking-map').html('');
                 // Reinitialize the map with new settings
-                loadGoogleMaps();
+                // loadGoogleMaps();
                 // Send the data to the server to save to the database
                 $.ajax({
                     url: keywordTrackerAjax.ajax_url,
@@ -478,13 +551,12 @@ jQuery(document).ready(function($) {
                         placeId: placeId,
                         gridRadius: gridRadius,
                         gridPoints: gridPoints,
-                        center: center,
+                        center: selectedCoordinates,
                         nonce: keywordTrackerAjax.nonce
                     },
                     success: function(response) {
                         if (response.success) {
-                            console.log(response)
-                            alert('Data saved successfully.');
+                            location.reload(); // Reload the page on success
                         } else {
                             alert('Failed to save data.');
                         }
@@ -511,58 +583,63 @@ jQuery(document).ready(function($) {
     }
 
     // Initialize map function
-    function initMap() {
-        const map = new google.maps.Map(document.getElementById('gmb-ranking-map'), {
-            zoom: 11,
-            center: center
-        });
+    // function initMap() {
 
-        const milesToDegrees = 1 / 69.0; // 1 mile in degrees
-        const gridSize = gridRadius * 2 * milesToDegrees; // Distance between centers of circles
 
-        // Calculate the start positions
-        const startLat = center.lat - (gridSize * (gridPoints / 2));
-        const startLng = center.lng - (gridSize * (gridPoints / 2));
+    //     gridRadius = parseFloat($('#grid-radius').val());
+    //     gridPoints = parseInt($('#grid-points').val());
 
-        const bounds = new google.maps.LatLngBounds();
+    //     const map = new google.maps.Map(document.getElementById('gmb-ranking-map'), {
+    //         zoom: 11,
+    //         center: center
+    //     });
 
-        for (let i = 0; i < gridPoints; i++) {
-            for (let j = 0; j < gridPoints; j++) {
-                const lat = startLat + (i * gridSize);
-                const lng = startLng + (j * gridSize);
+    //     const milesToDegrees = 1 / 69.0; // 1 mile in degrees
+    //     const gridSize = gridRadius * 2 * milesToDegrees; // Distance between centers of circles
 
-                const circle = new google.maps.Circle({
-                    strokeColor: '#000000',
-                    strokeOpacity: 1,
-                    strokeWeight: 2,
-                    fillColor: '#ffffff',
-                    fillOpacity: 1,
-                    map,
-                    center: { lat, lng },
-                    radius: gridRadius * 1609.34 / 4.5 // Radius in meters (1 mile = 1609.34 meters)
-                });
+    //     // Calculate the start positions
+    //     const startLat = center.lat - (gridSize * (gridPoints / 2));
+    //     const startLng = center.lng - (gridSize * (gridPoints / 2));
 
-                const marker = new google.maps.Marker({
-                    position: { lat, lng },
-                    map,
-                    label: {
-                        text: '?',
-                        color: '#000000',
-                        fontSize: '10px'
-                    },
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        scale: 0 // Hide the default circle
-                    }
-                });
+    //     const bounds = new google.maps.LatLngBounds();
 
-                bounds.extend({ lat, lng });
-            }
-        }
+    //     for (let i = 0; i < gridPoints; i++) {
+    //         for (let j = 0; j < gridPoints; j++) {
+    //             const lat = startLat + (i * gridSize);
+    //             const lng = startLng + (j * gridSize);
 
-        // Fit the map to the bounds of the grid
-        map.fitBounds(bounds);
-    }
+    //             const circle = new google.maps.Circle({
+    //                 strokeColor: '#000000',
+    //                 strokeOpacity: 1,
+    //                 strokeWeight: 2,
+    //                 fillColor: '#ffffff',
+    //                 fillOpacity: 1,
+    //                 map,
+    //                 center: { lat, lng },
+    //                 radius: gridRadius * 1609.34 / 4.5 // Radius in meters (1 mile = 1609.34 meters)
+    //             });
+
+    //             const marker = new google.maps.Marker({
+    //                 position: { lat, lng },
+    //                 map,
+    //                 label: {
+    //                     text: '?',
+    //                     color: '#000000',
+    //                     fontSize: '10px'
+    //                 },
+    //                 icon: {
+    //                     path: google.maps.SymbolPath.CIRCLE,
+    //                     scale: 0 // Hide the default circle
+    //                 }
+    //             });
+
+    //             bounds.extend({ lat, lng });
+    //         }
+    //     }
+
+    //     // Fit the map to the bounds of the grid
+    //     map.fitBounds(bounds);
+    // }
 
     // Load the map after the Google Maps script has been loaded
     function loadGoogleMaps() {
@@ -572,6 +649,21 @@ jQuery(document).ready(function($) {
             setTimeout(loadGoogleMaps, 100);
         }
     }
+
+
+    $('#grid-radius, #grid-points').on('change', function() {
+        const location = $('#location-input').val();
+        if (location) {
+            geocodeLocation(location, function(geocodedLocation) {
+                if (geocodedLocation) {
+                    selectedCoordinates = geocodedLocation; // Update the selected coordinates
+                    initMap(); // Initialize the map with the new coordinates
+                } else {
+                    alert('Failed to geocode the location.');
+                }
+            });
+        }
+    });
 
 
 
