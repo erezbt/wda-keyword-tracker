@@ -158,43 +158,44 @@ function gmb_ranking_grid_page() {
     ?>
     <div class="wrap">
         <h1>GMB Ranking Grid</h1>
-        <form id="grid-settings-form">
+        
+        <button id="toggle-form-button" class="button button-primary">Add Keyword</button>
+        
+        <form id="grid-settings-form" style="display: none;">
             <div class="form-field-group">
-            <label for="keyword-input">Keyword *</label>
-            <input type="text" id="keyword-input" name="keyword" required style="margin-right: 10px;" />
+                <label for="keyword-input">Keyword *</label>
+                <input type="text" id="keyword-input" name="keyword" required style="margin-right: 10px;" />
             </div>
             <div class="form-field-group">
-            <label for="location-input">Location Center *</label>
-            <input type="text" id="location-input" name="location" required style="margin-right: 10px;" autocomplete="off" />
-            <div id="location-suggestions" style="display: none;"></div>
+                <label for="location-input">Location Center *</label>
+                <input type="text" id="location-input" name="location" required style="margin-right: 10px;" autocomplete="off" />
+                <div id="location-suggestions" style="display: none;"></div>
             </div>
             <div class="form-field-group">
-            <label for="grid-radius">Grid Radius *</label>
-            
-            <select id="grid-radius" name="grid-radius">
-                <option value="5">5 Mi</option>
-                <option value="10">10 Mi</option>
-                <option value="15">15 Mi</option>
-                <!-- Add more options as needed -->
-            </select>
-            <em style="display:block; margin-bottom:5px;">Distance between the very center of a grid and the farthest points at the edge of the grid</em>
+                <label for="grid-radius">Grid Radius *</label>
+                <select id="grid-radius" name="grid-radius">
+                    <option value="5">5 Mi</option>
+                    <option value="10">10 Mi</option>
+                    <option value="15">15 Mi</option>
+                    <!-- Add more options as needed -->
+                </select>
+                <em style="display:block; margin-bottom:5px;">Distance between the very center of a grid and the farthest points at the edge of the grid</em>
             </div>
             <div class="form-field-group">
-            <label for="grid-points">Grid Points *</label>
-            
-            <select id="grid-points" name="grid-points">
-                <option value="3">3 x 3 Grid</option>
-                <option value="5">5 x 5 Grid</option>
-                <option value="7">7 x 7 Grid</option>
-                <option value="9">9 x 9 Grid</option>
-                <!-- Add more options as needed -->
-            </select>
-            <em style="display:block; margin-bottom:5px;">Number of grid points in each row and column</em>
+                <label for="grid-points">Grid Points *</label>
+                <select id="grid-points" name="grid-points">
+                    <option value="3">3 x 3 Grid</option>
+                    <option value="5">5 x 5 Grid</option>
+                    <option value="7">7 x 7 Grid</option>
+                    <option value="9">9 x 9 Grid</option>
+                    <!-- Add more options as needed -->
+                </select>
+                <em style="display:block; margin-bottom:5px;">Number of grid points in each row and column</em>
             </div>
             <button type="button" id="check-ranking">Check Ranking</button>
         </form>
 
-        <div id="gmb-ranking-map" style="width: 600px; height: 600px; margin-top: 20px;"></div>
+        <div id="gmb-ranking-map" style="width: 600px; height: 600px; margin-top: 20px; display: none;"></div>
         
         <h2>GMB Keyword Tracking Results</h2>
         <table class="widefat">
@@ -203,7 +204,6 @@ function gmb_ranking_grid_page() {
                     <th>Keyword</th>
                     <th>Location</th>
                     <th>Avg. Ranking</th>
-                   
                 </tr>
             </thead>
             <tbody>
@@ -212,13 +212,25 @@ function gmb_ranking_grid_page() {
                         <td><?php echo esc_html($result->keyword); ?></td>
                         <td><?php echo esc_html($result->location); ?></td>
                         <td><?php echo esc_html($result->avg_ranking); ?></td>
-                        
                     </tr>
                 <?php endforeach; ?>
             </tbody>
         </table>
-
     </div>
+
+    <script type="text/javascript">
+        document.getElementById('toggle-form-button').addEventListener('click', function() {
+            var form = document.getElementById('grid-settings-form');
+            var map = document.getElementById('gmb-ranking-map');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                map.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+                map.style.display = 'none';
+            }
+        });
+    </script>
     <?php
 }
 
