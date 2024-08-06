@@ -552,6 +552,8 @@ jQuery(document).ready(function($) {
                         gridRadius: gridRadius,
                         gridPoints: gridPoints,
                         center: selectedCoordinates,
+                        centerLat: selectedCoordinates.lat,
+                        centerLng: selectedCoordinates.lng,
                         nonce: keywordTrackerAjax.nonce
                     },
                     success: function(response) {

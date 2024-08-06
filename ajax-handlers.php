@@ -371,7 +371,8 @@ function save_gmb_data() {
     $gridRadius = floatval($_POST['gridRadius']);
     $gridPoints = intval($_POST['gridPoints']);
     $center = $_POST['center'];
-
+    $center_lat = sanitize_text_field($_POST['centerLat']);
+    $center_lng = sanitize_text_field($_POST['centerLng']);
     $gmb_table_name = $wpdb->prefix . 'gmb_keyword_tracker';
     $grid_points_table_name = $wpdb->prefix . 'gmb_grid_points';
 
@@ -390,6 +391,8 @@ function save_gmb_data() {
             'place_id' => $place_id,
             'grid_points' => $grid_points,
             'grid_radius' => $grid_radius,
+            'center_lat' => $center_lat,
+            'center_lng' => $center_lng,
             'created_date' => $current_time,
             'avg_ranking' => $avg_ranking,
             'last_ranking_check' => $last_ranking_check

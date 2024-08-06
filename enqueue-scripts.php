@@ -15,7 +15,11 @@ function keyword_tracker_enqueue_scripts($hook_suffix) {
     wp_enqueue_script('chartjs-adapter-moment', 'https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0', array('chart-js', 'moment-js'), null, true);
 
     // Enqueue Google Maps API (only on specific admin page)
-    if ($hook_suffix === 'keyword-tracker_page_gmb-ranking-grid') {
+    $is_gmb_ranking_grid = ($hook_suffix === 'keyword-tracker_page_gmb-ranking-grid');
+    $is_keyword_ranking_results = (isset($_GET['page']) && $_GET['page'] === 'keyword-ranking-results');
+
+    // Enqueue Google Maps API (only on specific admin page)
+    if ($is_gmb_ranking_grid || $is_keyword_ranking_results) {
         $google_api_key = get_option('google_api_key');
         if ($google_api_key) {
             wp_enqueue_script('google-maps', 'https://maps.googleapis.com/maps/api/js?key=' . esc_attr($google_api_key) . '&libraries=places', [], null, true);

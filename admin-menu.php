@@ -11,6 +11,10 @@ function keyword_tracker_menu() {
         'gmb_ranking_grid_page' // Function to display the page
     );
     add_submenu_page('keyword-tracker', 'Settings', 'Settings', 'manage_options', 'keyword-tracker-settings', 'keyword_tracker_settings_page');
+
+    // Register the ranking results page
+    add_submenu_page(null, 'Keyword Ranking Results', 'Keyword Ranking Results', 'manage_options', 'keyword-ranking-results', 'keyword_ranking_results_page');
+    
 }
 add_action('admin_menu', 'keyword_tracker_menu');
 
@@ -216,7 +220,7 @@ function gmb_ranking_grid_page() {
             <tbody>
                 <?php foreach ($results as $result) : ?>
                     <tr>
-                        <td><?php echo esc_html($result->keyword); ?></td>
+                        <td><a href="<?php echo admin_url('admin.php?page=keyword-ranking-results&id='.$result->id); ?>"><?php echo esc_html($result->keyword); ?></a></td>
                         <td><?php echo esc_html($result->location); ?></td>
                         <td><?php echo esc_html($result->grid_radius)." Mi"; ?></td>
                         <td><?php echo esc_html($result->grid_points)."X".esc_html($result->grid_points); ?></td>
@@ -260,6 +264,117 @@ function gmb_ranking_grid_page() {
     </script>
     <?php
 }
+
+
+function keyword_ranking_results_page() {
+    global $wpdb;
+
+    $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    $table_name = $wpdb->prefix . 'gmb_keyword_tracker';
+    $result = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_name WHERE id = %d", $id));
+
+    
+
+    if (!$result) {
+        echo '<div class="wrap"><h1>Invalid ID</h1></div>';
+        return;
+    }
+
+    $grid_table_name = $wpdb->prefix . 'gmb_grid_points';
+    $grid_points = $wpdb->get_results($wpdb->prepare("SELECT * FROM $grid_table_name WHERE gmb_id = %d", $id));
+
+    $grid_points_json = json_encode($grid_points);
+
+    ?>
+    <div class="wrap">
+        <h1>Keyword Ranking Results for "<?php echo esc_html($result->keyword); ?>"</h1>
+        <div id="ranking-map" style="width: 100%; height: 600px;"></div>
+    </div>
+
+    
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            function initRankingMap() {
+                const center = { lat: parseFloat("<?php echo esc_js($result->center_lat); ?>"), lng: parseFloat("<?php echo esc_js($result->center_lng); ?>") };
+
+                const map = new google.maps.Map(document.getElementById('ranking-map'), {
+                    zoom: 11,
+                    center: center
+                });
+
+                const bounds = new google.maps.LatLngBounds();
+
+                // Grid points data
+                const gridPoints = <?php echo $grid_points_json; ?>;
+                
+                const circles = []; // Store circle objects to update radius later
+
+                gridPoints.forEach(point => {
+                    const lat = parseFloat(point.lat);
+                    const lng = parseFloat(point.lng);
+
+                    // Determine the color based on the ranking
+                    const fillColor = point.ranking !== null && point.ranking <= 10 ? '#00ff00' : '#ff0000'; // Red for ranking <= 10, green otherwise
+
+                    const circle = new google.maps.Circle({
+                        strokeColor: fillColor,
+                        strokeOpacity: 1,
+                        strokeWeight: 2,
+                        fillColor: fillColor,
+                        fillOpacity: 1,
+                        map,
+                        center: { lat, lng },
+                        radius: calculateRadius(map.getZoom())
+                    });
+
+                    circles.push(circle);
+
+                    const marker = new google.maps.Marker({
+                        position: { lat, lng },
+                        map,
+                        label: {
+                            text: point.ranking !== null ? point.ranking.toString() : '?',
+                            color: '#000000',
+                            fontSize: '10px'
+                        },
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 0 // Hide the default circle
+                        }
+                    });
+
+                    bounds.extend({ lat, lng });
+                });
+
+                // Fit the map to the bounds of the grid
+                map.fitBounds(bounds);
+
+                // Add zoom changed listener to adjust circle radius
+                map.addListener('zoom_changed', () => {
+                    const newRadius = calculateRadius(map.getZoom());
+                    circles.forEach(circle => circle.setRadius(newRadius));
+                });
+            }
+
+            function calculateRadius(zoom) {
+                const baseRadius = <?php echo esc_js($result->grid_radius); ?> * 1609.34 / 3; // Base radius in meters (1 mile = 1609.34 meters)
+                const zoomFactor = Math.pow(2, 11 - zoom); // Adjust factor based on zoom level
+                return baseRadius * zoomFactor;
+            }
+
+            // Load the map
+            if (typeof google !== 'undefined' && google.maps) {
+                initRankingMap();
+            } else {
+                setTimeout(arguments.callee, 100);
+            }
+        });
+
+    </script>
+    <?php
+}
+
+// Register the menu page
 
 
 function keyword_tracker_serpapi_key_callback() {
