@@ -151,6 +151,10 @@ add_action('admin_init', 'keyword_tracker_settings');
 
 
 function gmb_ranking_grid_page() {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'gmb_keyword_tracker';
+    $results = $wpdb->get_results("SELECT * FROM $table_name");
+
     ?>
     <div class="wrap">
         <h1>GMB Ranking Grid</h1>
@@ -191,6 +195,29 @@ function gmb_ranking_grid_page() {
         </form>
 
         <div id="gmb-ranking-map" style="width: 600px; height: 600px; margin-top: 20px;"></div>
+        
+        <h2>GMB Keyword Tracking Results</h2>
+        <table class="widefat">
+            <thead>
+                <tr>
+                    <th>Keyword</th>
+                    <th>Location</th>
+                    <th>Avg. Ranking</th>
+                   
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($results as $result) : ?>
+                    <tr>
+                        <td><?php echo esc_html($result->keyword); ?></td>
+                        <td><?php echo esc_html($result->location); ?></td>
+                        <td><?php echo esc_html($result->avg_ranking); ?></td>
+                        
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
     </div>
     <?php
 }
