@@ -56,6 +56,62 @@ function fetch_keyword_data($keyword, $location, $domain, $search_type) {
     return false;
 }
 
+function fetch_gmb_by_keyword_data($keyword, $location, $place_id) {
+    $api_key = get_option('serpapi_key');
+    // https://serpapi.com/search.json?engine=google_maps&q=Air+duct+cleaning+charlotte&ll=%4035.11840434782609%2C-80.80686811594204%2C10z&google_domain=google.com&hl=en&type=search&start=0&api_key=4464fcf016591966d2b7d444b4785680880fac3fbe399af44c3a11d63d95242f
+    $url = "https://serpapi.com/search.json?engine=google_maps&q=" . urlencode($keyword) . "&ll=" . urlencode($location) . "&google_domain=google.com&hl=en&type=search&start=0&async=true&api_key=".$api_key;
+    
+    $response = wp_remote_get($url);
+
+    if (is_wp_error($response)) {
+        return false;
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+    // return $data;
+    if (!isset($data['search_metadata']['id'])) {
+        return false;
+    }
+
+    $search_id = $data['search_metadata']['id'];
+    $result_url = "https://serpapi.com/searches/$search_id.json?api_key=$api_key";
+
+    
+    // Polling for the result
+    $polling_attempts = 0;
+    $polling_max_attempts = 10;
+    $polling_interval = 5; 
+
+    while ($polling_attempts < $polling_max_attempts) {
+        $polling_attempts++;
+        sleep($polling_interval);
+
+        $result_response = wp_remote_get($result_url);
+
+        if (is_wp_error($result_response)) {
+            continue;
+        }
+
+        $result_body = wp_remote_retrieve_body($result_response);
+        $result_data = json_decode($result_body, true);
+        
+        if (isset($result_data['local_results'])) {
+            $filtered_results = array_filter($result_data['local_results'], function($result) use ($place_id) {
+                return strpos($result['place_id'], $place_id) !== false;
+            });
+
+            if (empty($filtered_results)) {
+                return false;
+            }
+
+            return $filtered_results;
+        }
+    }
+
+    return false;
+}
+
 
 function get_keywords_from_db() {
     global $wpdb;

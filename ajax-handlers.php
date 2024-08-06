@@ -333,3 +333,96 @@ function handle_get_keyword_chart_data() {
     ]);
 }
 add_action('wp_ajax_get_keyword_chart_data', 'handle_get_keyword_chart_data');
+
+
+add_action('wp_ajax_get_gmb_data', 'get_gmb_data');
+function get_gmb_data() {
+    check_ajax_referer('keyword_tracker_nonce', 'nonce');
+
+    // Example: Fetch GMB data logic here
+    $gmb_data = [
+        // Sample data
+        ['business' => 'Business 1', 'rank' => 1, 'location' => 'Location 1'],
+        ['business' => 'Business 2', 'rank' => 2, 'location' => 'Location 2'],
+    ];
+
+    wp_send_json_success($gmb_data);
+}
+
+
+add_action('wp_ajax_save_gmb_data', 'save_gmb_data');
+
+function save_gmb_data() {
+    check_ajax_referer('keyword_tracker_nonce', 'nonce');
+
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error('Unauthorized.');
+    }
+
+    global $wpdb;
+
+    $place_id = get_option('place_id');
+
+    $keyword = sanitize_text_field($_POST['keyword']);
+    $location = sanitize_text_field($_POST['location']);
+    $place_id = sanitize_text_field($place_id);
+    $gridRadius = floatval($_POST['gridRadius']);
+    $gridPoints = intval($_POST['gridPoints']);
+    $center = $_POST['center'];
+
+    $gmb_table_name = $wpdb->prefix . 'gmb_keyword_tracker';
+    $grid_points_table_name = $wpdb->prefix . 'gmb_grid_points';
+
+    $current_time = current_time('mysql');
+    $avg_ranking = 0; // Placeholder for average ranking calculation
+    $last_ranking_check = null;
+
+
+    
+    // Insert data into gmb_keyword_tracker table
+    $wpdb->insert(
+        $gmb_table_name,
+        [
+            'keyword' => $keyword,
+            'location' => $location,
+            'place_id' => $place_id,
+            'created_date' => $current_time,
+            'avg_ranking' => $avg_ranking,
+            'last_ranking_check' => $last_ranking_check
+        ]
+    );
+
+    $gmb_id = $wpdb->insert_id;
+
+    // Calculate the grid points and insert them into the grid_points table
+    $milesToDegrees = 1 / 69.0; // 1 mile in degrees
+    $gridSize = $gridRadius * 2 * $milesToDegrees; // Distance between centers of circles
+
+    $startLat = $center['lat'] - ($gridSize * ($gridPoints / 2));
+    $startLng = $center['lng'] - ($gridSize * ($gridPoints / 2));
+
+    for ($i = 0; $i < $gridPoints; $i++) {
+        for ($j = 0; $j < $gridPoints; $j++) {
+            $lat = $startLat + ($i * $gridSize);
+            $lng = $startLng + ($j * $gridSize);
+
+            // Placeholder for ranking data; you can replace this with actual ranking data fetching logic
+            $ranking = null; 
+
+            $wpdb->insert(
+                $grid_points_table_name,
+                [
+                    'gmb_id' => $gmb_id,
+                    'lat' => $lat,
+                    'lng' => $lng,
+                    'ranking' => $ranking
+                ]
+            );
+        }
+    }
+
+    // $results = fetch_gmb_by_keyword_data('air duct cleaning charlotte nc', '@35.11840434782609,-80.80686811594204,10z','ChIJezXR6PyhVogRobBGDKtccTI');
+
+    wp_send_json_success($results);
+    // wp_send_json_success('Data saved successfully.');
+}

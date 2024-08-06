@@ -74,3 +74,31 @@
     width: 600px;
     height: 400px;
 }
+
+#table-filter {
+    margin-bottom: 10px;
+    padding: 5px;
+    width: 250px;
+}
+
+
+#gmb-ranking-grid-container table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#gmb-ranking-grid-container th, #gmb-ranking-grid-container td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.form-field-group{
+    margin-bottom:10px;
+}
+
+.form-field-group label{
+    display:block;
+    margin-bottom:5px;
+}
+

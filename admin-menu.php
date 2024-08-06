@@ -2,6 +2,14 @@
 
 function keyword_tracker_menu() {
     add_menu_page('Keyword Tracker', 'Keyword Tracker', 'manage_options', 'keyword-tracker', 'keyword_tracker_page', 'dashicons-chart-line', 100);
+    add_submenu_page(
+        'keyword-tracker', // Parent slug
+        'GMB Ranking Grid', // Page title
+        'GMB Ranking Grid', // Menu title
+        'manage_options', // Capability
+        'gmb-ranking-grid', // Menu slug
+        'gmb_ranking_grid_page' // Function to display the page
+    );
     add_submenu_page('keyword-tracker', 'Settings', 'Settings', 'manage_options', 'keyword-tracker-settings', 'keyword_tracker_settings_page');
 }
 add_action('admin_menu', 'keyword_tracker_menu');
@@ -39,11 +47,16 @@ function keyword_tracker_page() {
 
         <div id="keyword-results-container" style="display: none; width:100%;">
             <h2>Keyword Tracking Results</h2>
-            <button id="update-selected" style="margin-bottom: 10px;" class="button button-primary">Update Selected Keywords</button>
+            <div style="display:flex; justify-content: space-between;">
+                <button id="update-selected" style="margin-bottom: 10px;" class="button button-primary">Update Selected Keywords</button>
+                
+                <input type="text" id="table-filter" placeholder="Enter link or keyword to filter">
+               
+            </div>
             <table id="keyword-results" class="widefat" >
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="select-all"></th>
+                    <th><input type="checkbox" id="select-all" style="margin:0;"></th>
                     <th>Keyword</th>
                     <th><a href="javascript:void(0);" id="rank-header">Rank</a></th>
                     <th>1d</th>
@@ -72,7 +85,7 @@ function keyword_tracker_page() {
                             <?php endif; ?>
                         </span>
                     </td>
-                    <td><?php echo esc_html(strtolower($result->keyword)); ?></td>
+                    <td class="keyword"><?php echo esc_html(strtolower($result->keyword)); ?></td>
                     <td class="rank" data-rank="<?php echo ($result->rank === '-1' || $result->rank === '101') ? '100' : esc_attr($result->rank); ?>">
                         <?php if ($result->rank === '-1') : ?>
                         Updating...
@@ -124,15 +137,76 @@ function keyword_tracker_settings_page() {
 
 function keyword_tracker_settings() {
     register_setting('keyword_tracker_settings_group', 'serpapi_key');
+    register_setting('keyword_tracker_settings_group', 'google_api_key');
+    register_setting('keyword_tracker_settings_group', 'place_id');
 
     add_settings_section('keyword_tracker_settings_section', 'API Settings', null, 'keyword-tracker-settings');
 
     add_settings_field('serpapi_key', 'SERPAPI Key', 'keyword_tracker_serpapi_key_callback', 'keyword-tracker-settings', 'keyword_tracker_settings_section');
+    add_settings_field('google_api_key', 'Google API Key', 'keyword_tracker_google_api_key_callback', 'keyword-tracker-settings', 'keyword_tracker_settings_section');
+    add_settings_field('place_id', 'Place ID', 'keyword_tracker_place_id_callback', 'keyword-tracker-settings', 'keyword_tracker_settings_section');
 }
 add_action('admin_init', 'keyword_tracker_settings');
+
+
+
+function gmb_ranking_grid_page() {
+    ?>
+    <div class="wrap">
+        <h1>GMB Ranking Grid</h1>
+        <form id="grid-settings-form">
+            <div class="form-field-group">
+            <label for="keyword-input">Keyword *</label>
+            <input type="text" id="keyword-input" name="keyword" required style="margin-right: 10px;" />
+            </div>
+            <div class="form-field-group">
+            <label for="location-input">Location Center *</label>
+            <input type="text" id="location-input" name="location" required style="margin-right: 10px;" autocomplete="off" />
+            <div id="location-suggestions" style="display: none;"></div>
+            </div>
+            <div class="form-field-group">
+            <label for="grid-radius">Grid Radius *</label>
+            
+            <select id="grid-radius" name="grid-radius">
+                <option value="5">5 Mi</option>
+                <option value="10">10 Mi</option>
+                <option value="15">15 Mi</option>
+                <!-- Add more options as needed -->
+            </select>
+            <em style="display:block; margin-bottom:5px;">Distance between the very center of a grid and the farthest points at the edge of the grid</em>
+            </div>
+            <div class="form-field-group">
+            <label for="grid-points">Grid Points *</label>
+            
+            <select id="grid-points" name="grid-points">
+                <option value="3">3 x 3 Grid</option>
+                <option value="5">5 x 5 Grid</option>
+                <option value="7">7 x 7 Grid</option>
+                <option value="9">9 x 9 Grid</option>
+                <!-- Add more options as needed -->
+            </select>
+            <em style="display:block; margin-bottom:5px;">Number of grid points in each row and column</em>
+            </div>
+            <button type="button" id="check-ranking">Check Ranking</button>
+        </form>
+
+        <div id="gmb-ranking-map" style="width: 600px; height: 600px; margin-top: 20px;"></div>
+    </div>
+    <?php
+}
+
 
 function keyword_tracker_serpapi_key_callback() {
     $serpapi_key = get_option('serpapi_key');
     echo '<input type="text" name="serpapi_key" value="' . esc_attr($serpapi_key) . '" />';
 }
 
+function keyword_tracker_google_api_key_callback() {
+    $google_api_key = get_option('google_api_key');
+    echo '<input type="text" name="google_api_key" value="' . esc_attr($google_api_key) . '" />';
+}
+
+function keyword_tracker_place_id_callback() {
+    $place_id = get_option('place_id');
+    echo '<input type="text" name="place_id" value="' . esc_attr($place_id) . '" />';
+}

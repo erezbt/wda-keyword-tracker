@@ -311,12 +311,17 @@ jQuery(document).ready(function($) {
     }
 
     // Sort table when the page loads
-    sortTable();
-
-    rankHeader.addEventListener('click', function() {
-        orderAsc = !orderAsc; // Toggle sort order
+    if ($('#keyword-results').length > 0) {
         sortTable();
-    });
+
+        rankHeader.addEventListener('click', function() {
+            orderAsc = !orderAsc; // Toggle sort order
+            sortTable();
+        });
+
+    }
+
+    
 
 
     // Function to extract the path from a URL
@@ -414,6 +419,20 @@ jQuery(document).ready(function($) {
         });
     });
 
+    // Add event listener for the link filter input
+    $('#table-filter').on('keyup', function() {
+        var filterValue = $(this).val().toLowerCase();
+        $('#keyword-results tbody tr').each(function() {
+            var linkText = $(this).find('td.link a').text().toLowerCase();
+            var keywordText = $(this).find('td.keyword').text().toLowerCase(); // Assuming the keyword is in the second column
+            if (linkText.indexOf(filterValue) > -1 || keywordText.indexOf(filterValue) > -1) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+
     // Hide the popup when clicking outside of it
     $(document).on('click', function(e) {
         if (!$(e.target).closest('#chart-popup, .show-chart').length) {
@@ -421,4 +440,139 @@ jQuery(document).ready(function($) {
         }
     });
     
+
+    // Map initialization function
+    let gridRadius = 5; // Default grid radius in miles
+    let gridPoints = 5; // Default number of grid points in each row and column
+    let center = { lat: 35.2271, lng: -80.8431 }; // Default center (Charlotte, NC)
+
+    // Handle form submission
+    $('#check-ranking').on('click', function() {
+        const keyword = $('#keyword-input').val();
+        const location = $('#location-input').val();
+        const placeId  = keywordTrackerAjax.place_id;
+        gridRadius = parseFloat($('#grid-radius').val());
+        gridPoints = parseInt($('#grid-points').val());
+
+        if (!keyword || !location) {
+            alert('Please enter both keyword and location.');
+            return;
+        }
+
+        // Geocode the location
+        geocodeLocation(location, function(geocodedLocation) {
+            if (geocodedLocation) {
+                center = geocodedLocation;
+                // Clear the map container
+                $('#gmb-ranking-map').html('');
+                // Reinitialize the map with new settings
+                loadGoogleMaps();
+                // Send the data to the server to save to the database
+                $.ajax({
+                    url: keywordTrackerAjax.ajax_url,
+                    method: 'POST',
+                    data: {
+                        action: 'save_gmb_data',
+                        keyword: keyword,
+                        location: location,
+                        placeId: placeId,
+                        gridRadius: gridRadius,
+                        gridPoints: gridPoints,
+                        center: center,
+                        nonce: keywordTrackerAjax.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            console.log(response)
+                            alert('Data saved successfully.');
+                        } else {
+                            alert('Failed to save data.');
+                        }
+                    }
+                });
+
+            } else {
+                alert('Failed to geocode the location.');
+            }
+        });
+    });
+
+    // Geocode location function
+    function geocodeLocation(location, callback) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ address: location }, function(results, status) {
+            if (status === 'OK' && results[0]) {
+                const latLng = results[0].geometry.location;
+                callback({ lat: latLng.lat(), lng: latLng.lng() });
+            } else {
+                callback(null);
+            }
+        });
+    }
+
+    // Initialize map function
+    function initMap() {
+        const map = new google.maps.Map(document.getElementById('gmb-ranking-map'), {
+            zoom: 11,
+            center: center
+        });
+
+        const milesToDegrees = 1 / 69.0; // 1 mile in degrees
+        const gridSize = gridRadius * 2 * milesToDegrees; // Distance between centers of circles
+
+        // Calculate the start positions
+        const startLat = center.lat - (gridSize * (gridPoints / 2));
+        const startLng = center.lng - (gridSize * (gridPoints / 2));
+
+        const bounds = new google.maps.LatLngBounds();
+
+        for (let i = 0; i < gridPoints; i++) {
+            for (let j = 0; j < gridPoints; j++) {
+                const lat = startLat + (i * gridSize);
+                const lng = startLng + (j * gridSize);
+
+                const circle = new google.maps.Circle({
+                    strokeColor: '#000000',
+                    strokeOpacity: 1,
+                    strokeWeight: 2,
+                    fillColor: '#ffffff',
+                    fillOpacity: 1,
+                    map,
+                    center: { lat, lng },
+                    radius: gridRadius * 1609.34 / 4.5 // Radius in meters (1 mile = 1609.34 meters)
+                });
+
+                const marker = new google.maps.Marker({
+                    position: { lat, lng },
+                    map,
+                    label: {
+                        text: '?',
+                        color: '#000000',
+                        fontSize: '10px'
+                    },
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 0 // Hide the default circle
+                    }
+                });
+
+                bounds.extend({ lat, lng });
+            }
+        }
+
+        // Fit the map to the bounds of the grid
+        map.fitBounds(bounds);
+    }
+
+    // Load the map after the Google Maps script has been loaded
+    function loadGoogleMaps() {
+        if (typeof google !== 'undefined' && google.maps) {
+            initMap();
+        } else {
+            setTimeout(loadGoogleMaps, 100);
+        }
+    }
+
+
+
 });
